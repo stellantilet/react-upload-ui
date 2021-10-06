@@ -30,6 +30,7 @@ function App() {
   const uploading = useUploadingItem()
   const [interval, setInterval] = useState(0)
   const [percent, setPercent] = useState(0)
+  const [counter, setCounter] = useState(0)
 
   const handleSelectedFile = (file: File) => {
     const ext = file.name.substring(file.name.lastIndexOf('.') + 1)
@@ -50,6 +51,10 @@ function App() {
 
   useEffect(() => {
     if (uploading && uploadData.status === FileStatus.UPLOADING) {
+      if (counter % 4 === 3 && percent > 50) {
+        dispatch(incomplete(uploading))
+        return
+      }
       dispatch(setProgress(percent))
       if (percent > 100) {
         dispatch(complete(uploading))
@@ -69,6 +74,7 @@ function App() {
         uploadData.status === FileStatus.COMPLETED ||
         uploadData.status === FileStatus.INCOMPLETED
       ) {
+        setCounter(counter + 1)
         dispatch(next())
       }
     }

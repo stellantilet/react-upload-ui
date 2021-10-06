@@ -1,19 +1,15 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { FileUpload, FileStatus } from '../types.d'
+import { FileUpload, FileStatus, IntervalState } from '../types.d'
 import type { RootState } from '../store'
 
 const initialState: {
-  current: FileStatus
-  previous: FileStatus
-  counter: number
+  status: FileStatus
   waiting: FileUpload[]
   uploading: FileUpload[]
   incompleted: FileUpload[]
   completed: FileUpload[]
 } = {
-  current: FileStatus.WAITING,
-  previous: FileStatus.WAITING,
-  counter: 0,
+  status: FileStatus.WAITING,
   waiting: [] as FileUpload[],
   uploading: [] as FileUpload[],
   incompleted: [] as FileUpload[],
@@ -52,9 +48,6 @@ export const uploadSlice = createSlice({
       }
     },
     cancel: (state, action: PayloadAction<FileUpload>) => {
-      state.previous = state.current
-      state.current = FileStatus.INCOMPLETED
-
       let payload = { ...action.payload }
       payload.progress = 0
       if (payload.status === FileStatus.WAITING) {
@@ -69,6 +62,7 @@ export const uploadSlice = createSlice({
         payload.queueIndex = state.incompleted.length
         payload.status = FileStatus.INCOMPLETED
         state.incompleted.push(payload)
+        state.status = FileStatus.INCOMPLETED
       } else if (payload.status === FileStatus.INCOMPLETED) {
         state.incompleted.splice(payload.queueIndex, 1)
         resetIndex(state.incompleted)
@@ -85,9 +79,7 @@ export const uploadSlice = createSlice({
         payload.queueIndex = state.uploading.length
         payload.progress = 0
         state.uploading.push(payload)
-        state.previous = FileStatus.WAITING
-        state.current = FileStatus.UPLOADING
-        state.counter++
+        state.status = FileStatus.UPLOADING
       } else {
         payload.status = FileStatus.WAITING
         payload.queueIndex = state.waiting.length
@@ -103,19 +95,13 @@ export const uploadSlice = createSlice({
         payload.queueIndex = state.uploading.length
         payload.progress = 0
         state.uploading.push(payload)
-        state.previous = FileStatus.WAITING
-        state.current = FileStatus.UPLOADING
-        state.counter++
+        state.status = FileStatus.UPLOADING
       }
     },
     setProgress: (state, action: PayloadAction<number>) => {
-      if (
-        state.uploading[0] &&
-        state.uploading[0].progress != undefined &&
-        state.uploading[0].progress >= 0
-      ) {
-        state.uploading[0].progress = action.payload
-        state.previous = state.current
+      let uploading = state.uploading[0]
+      if (uploading && uploading.progress != undefined) {
+        uploading.progress = action.payload
       }
     },
     complete: (state, action: PayloadAction<FileUpload>) => {
@@ -125,8 +111,7 @@ export const uploadSlice = createSlice({
       payload.queueIndex = state.completed.length
       payload.status = FileStatus.COMPLETED
       state.completed.push(payload)
-      state.previous = state.current
-      state.current = FileStatus.COMPLETED
+      state.status = FileStatus.COMPLETED
     },
     incomplete: (state, action: PayloadAction<FileUpload>) => {
       let payload = { ...action.payload }
@@ -136,8 +121,7 @@ export const uploadSlice = createSlice({
       payload.queueIndex = state.incompleted.length
       payload.status = FileStatus.INCOMPLETED
       state.incompleted.push(payload)
-      state.previous = state.current
-      state.current = FileStatus.INCOMPLETED
+      state.status = FileStatus.INCOMPLETED
     },
   },
 })

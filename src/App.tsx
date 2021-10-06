@@ -1,10 +1,15 @@
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import './assets/style/App.css'
 
 import Header from './components/Header'
 import FilePanel from './components/FilePanel'
 
-import { FileExtToType, FileStatus, FileUpload } from './store/types.d'
+import {
+  FileExtToType,
+  FileStatus,
+  FileUpload,
+  IntervalState,
+} from './store/types.d'
 import {
   queue,
   next,
@@ -12,12 +17,19 @@ import {
   incomplete,
   setProgress,
 } from './store/slices/uploadSlice'
-import { useAppDispatch, useUpload, useUploadingItem } from './hooks'
+import {
+  useAppDispatch,
+  useUploadState,
+  useUploadingItem,
+  useInterval,
+} from './hooks'
 
 function App() {
   const dispatch = useAppDispatch()
-  const uploadData = useUpload()
+  const uploadData = useUploadState()
   const uploading = useUploadingItem()
+  const [interval, setInterval] = useState(0)
+  const [percent, setPercent] = useState(0)
 
   const handleSelectedFile = (file: File) => {
     const ext = file.name.substring(file.name.lastIndexOf('.') + 1)
@@ -32,55 +44,35 @@ function App() {
     dispatch(queue(fileUpload))
   }
 
-  let progressInterval: ReturnType<typeof setInterval> | null = null
-  let progress: number = 0
+  useInterval(() => {
+    setPercent(percent + 20)
+  }, interval)
 
   useEffect(() => {
-    if (
-      uploadData.previous === FileStatus.WAITING &&
-      uploadData.current === FileStatus.UPLOADING
-    ) {
-      progressInterval = setInterval(() => {
-        if (progressInterval) {
-          if (progress >= 100) {
-            clearInterval(progressInterval)
-            progressInterval = null
-            progress = 0
-            if (uploading) {
-              dispatch(complete(uploading))
-              dispatch(next())
-            }
-            return
-          } else if (
-            uploadData.current != FileStatus.UPLOADING ||
-            (uploadData.counter % 4 === 3 && progress > 50)
-          ) {
-            clearInterval(progressInterval)
-            progressInterval = null
-            progress = 0
-            if (uploading) {
-              dispatch(incomplete(uploading))
-              dispatch(next())
-              return
-            }
-          }
-        }
-        progress += 20
-        dispatch(setProgress(progress))
-      }, 1000)
-    } else if (uploadData.current != FileStatus.UPLOADING) {
-      if (progressInterval) {
-        clearInterval(progressInterval)
-        progressInterval = null
-        progress = 0
-        if (uploading) {
-          dispatch(incomplete(uploading))
-          dispatch(next())
-          return
-        }
+    if (uploading && uploadData.status === FileStatus.UPLOADING) {
+      dispatch(setProgress(percent))
+      if (percent > 100) {
+        dispatch(complete(uploading))
+        setInterval(0)
+        setPercent(0)
       }
     }
-  }, [uploadData])
+  }, [percent])
+
+  useEffect(() => {
+    if (uploadData.status === FileStatus.UPLOADING) {
+      setInterval(1000)
+    } else {
+      setInterval(0)
+      setPercent(0)
+      if (
+        uploadData.status === FileStatus.COMPLETED ||
+        uploadData.status === FileStatus.INCOMPLETED
+      ) {
+        dispatch(next())
+      }
+    }
+  }, [uploadData.status])
 
   return (
     <div className="App">

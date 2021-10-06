@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from './store/store'
 import { FileStatus, FileUpload } from './store/types.d'
@@ -26,6 +27,22 @@ export const useUploadingItem = (): FileUpload | null => {
   return uploadState.uploading[0]
 }
 
-export const useUpload = () => {
+export const useUploadState = () => {
   return useAppSelector(selectUpload)
+}
+
+export const useInterval = (callback: () => void, interval: number) => {
+  const savedCallback = useRef(callback)
+
+  useEffect(() => {
+    savedCallback.current = callback
+  }, [callback])
+
+  useEffect(() => {
+    if (interval === 0) {
+      return
+    }
+    const id = setInterval(() => savedCallback.current(), interval)
+    return () => clearInterval(id)
+  }, [interval])
 }

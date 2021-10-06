@@ -18,6 +18,8 @@ export interface FileUpload {
   progressInterval?: ReturnType<typeof setInterval>
 }
 
+export type IntervalState = ReturnType<typeof setInterval> | null
+
 export const FileExtToType: { [key: string]: FileType } = {
   pdf: 'pdf',
   rar: 'archive',

@@ -24,9 +24,7 @@ This uses font-awesome icons for UI decorations.
 ### - react-circular-progressbar
 This uses circular progressbar to show uploading progression.
 
-![image](https://user-images.githubusercontent.com/82226713/136211558-5970482a-9283-46e7-9344-abbca8221356.png)
-
 ### - I can polish UI by applying transition or other effects if I have more times.
 
 # 3. Live Demo
-https://zesstesting.000webhostapp.com/
+https://stellantilet.github.io/react-upload-ui/
